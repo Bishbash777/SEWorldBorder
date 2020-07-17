@@ -3,3 +3,6 @@
 ################################################################################
 
 /.vs
+/SEWorldBorder/bin
+/SEWorldBorder/obj/Debug
+/SEWorldBorder/obj/x64/Debug

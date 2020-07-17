@@ -1,0 +1,7 @@
+﻿<?xml version="1.0"?>
+<PluginManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>SEWorldBorder</Name>
+  <Guid>1056e25d-610e-43ef-aa3b-fe402c7acd3e</Guid>
+  <Repository>None</Repository>
+  <Version>v0.0.1</Version>
+</PluginManifest>
