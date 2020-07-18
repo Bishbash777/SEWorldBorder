@@ -65,59 +65,72 @@ namespace SEWorldBorder
             int KMRADIUS = Config.Radius * 1000;
             maxDistance = Math.Pow(KMRADIUS, 2);
             i++;
-            if (i == 16) {
-                foreach (var player in MySession.Static.Players.GetOnlinePlayers()) {
-                    IMyPlayer IPLAYER = (IMyPlayer)player;
-                    double PlayerDistanceFromZero = Vector3D.DistanceSquared(player.GetPosition(), Vector3D.Zero);
-                    if (IPLAYER.PromoteLevel != MyPromoteLevel.Admin || IPLAYER.PromoteLevel != MyPromoteLevel.Owner) {
-                        foreach (var entity in MyEntities.GetEntities()) {
-                            var grid = entity as MyCubeGrid;
+            if (i % 16 == 0) {
+                try {
+                    foreach (var player in MySession.Static.Players.GetOnlinePlayers()) {
+                        IMyPlayer IPLAYER = (IMyPlayer)player;
+                        double PlayerDistanceFromZero = Vector3D.DistanceSquared(player.GetPosition(), Vector3D.Zero);
+                        if (IPLAYER.PromoteLevel != MyPromoteLevel.Admin || IPLAYER.PromoteLevel != MyPromoteLevel.Owner) {
+                            foreach (var entity in MyEntities.GetEntities()) {
+                                var grid = entity as MyCubeGrid;
 
-                            if (grid == null)
-                                continue;
-                            double GridDistanceFromZero = Vector3D.DistanceSquared(grid.PositionComp.GetPosition(), Vector3D.Zero);
-                            
-                            if (KMRADIUS - GridDistanceFromZero < 250000) {
-                                if (grid.BigOwners.Contains(player.Identity.IdentityId)) {
-                                    utils.NotifyMessage("You are too close to the world border!", player.Id.SteamId);
-                                }
-                            }
-                            else {
-                                if (!gridPositions.ContainsKey(grid.EntityId)) {
-                                    gridPositions.Add(grid.EntityId, grid.PositionComp.GetPosition());
+                                if (grid == null)
+                                    continue;
+                                double GridDistanceFromZero = Vector3D.DistanceSquared(grid.PositionComp.GetPosition(), Vector3D.Zero);
+                                Log.Warn($"GridDistanceFromZero = {GridDistanceFromZero}");
+                                if (KMRADIUS - GridDistanceFromZero < 250000) {
+                                    if (grid.BigOwners.Contains(player.Identity.IdentityId)) {
+                                        utils.NotifyMessage("You are too close to the world border!", player.Id.SteamId);
+                                    }
                                 }
                                 else {
-                                    gridPositions[grid.EntityId] = grid.PositionComp.GetPosition();
+                                    if (!gridPositions.ContainsKey(grid.EntityId)) {
+                                        Log.Warn($"ADDED POSITION FOR {grid.EntityId}");
+                                        gridPositions.Add(grid.EntityId, grid.PositionComp.GetPosition());
+                                    }
+                                    else {
+                                        gridPositions[grid.EntityId] = grid.PositionComp.GetPosition();
+                                        Log.Warn($"UPDATED POSITION FOR {grid.EntityId}");
+
+                                    }
+                                }
+                                if (KMRADIUS - GridDistanceFromZero < 0) {
+                                    if (gridPositions.ContainsKey(grid.EntityId)) {
+                                        grid.Physics.ClearSpeed();
+                                        grid.Teleport(MatrixD.CreateWorld(gridPositions[grid.EntityId]));
+                                        utils.NotifyMessage("You have been moved to a safe position", player.Id.SteamId);
+                                    }
                                 }
                             }
-                            if (KMRADIUS - GridDistanceFromZero < 0) {
-                                grid.Physics.ClearSpeed();
-                                grid.Teleport(MatrixD.CreateWorld(gridPositions[grid.EntityId]));
-                                utils.NotifyMessage("You have been moved to a safe position", player.Id.SteamId);
-                            }
-                        }
 
 
-                        //Player detection
-                        if (KMRADIUS - PlayerDistanceFromZero < 250000) {
-                            utils.NotifyMessage("You are too close to the world border!", player.Id.SteamId);
-                        }
-                        else {
-                            if (!playerPositions.ContainsKey(player.Identity.IdentityId)) {
-                                playerPositions.Add(player.Identity.IdentityId, player.GetPosition());
+                            //Player detection
+                            Log.Warn($"PlayerDistanceFromZero = {PlayerDistanceFromZero}");
+
+                            if (KMRADIUS - PlayerDistanceFromZero < 250000) {
+                                utils.NotifyMessage("You are too close to the world border!", player.Id.SteamId);
                             }
                             else {
-                                playerPositions[player.Identity.IdentityId] = player.GetPosition();
+                                if (!playerPositions.ContainsKey(player.Identity.IdentityId)) {
+                                    playerPositions.Add(player.Identity.IdentityId, player.GetPosition());
+                                }
+                                else {
+                                    playerPositions[player.Identity.IdentityId] = player.GetPosition();
+                                }
+                            }
+                            if (KMRADIUS - PlayerDistanceFromZero < 0) {
+                                player.Identity.Character.Physics.ClearSpeed();
+                                player.Identity.Character.Teleport(MatrixD.CreateWorld(playerPositions[player.Identity.IdentityId]));
+                                utils.NotifyMessage("You have been moved to a safe position", player.Id.SteamId);
+
                             }
                         }
-                        if (KMRADIUS - PlayerDistanceFromZero < 0) {
-                            player.Identity.Character.Physics.ClearSpeed();
-                            player.Identity.Character.Teleport(MatrixD.CreateWorld(playerPositions[player.Identity.IdentityId]));
-                            utils.NotifyMessage("You have been moved to a safe position", player.Id.SteamId);
-
-                        }
+                        
                     }
                     i = 0;
+                }
+                catch (Exception e) {
+                    Log.Fatal(e.ToString());
                 }
             }
         }
